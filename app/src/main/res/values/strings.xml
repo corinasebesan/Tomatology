@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">Tomatology</string>
+    <string name="menu_take_picture">Take Picture</string>
+    <string name="menu_browse_picture">Browse Gallery</string>
+    <string name="menu_past_results">Past Results</string>
+    <string name="menu_guide">Guide</string>
+    <string name="logo">Text Logo</string>
+    <string name="captured_picture">Captured Picture</string>
+    <string name="title_textview">Title TextView</string>
+    <string name="content_textview">Content TextView</string>
+    <string name="select">Select</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back to menu</string>
+    <string name="guide_text">How to use the app</string>
+    <string name="guide_title">App Guide</string>
+    <string name="disease_name">Disease Name</string>
+    <string name="disease_description">This is the disease description.</string>
+    <string name="archive_title">Title</string>
+    <string name="archive_description">This is a description</string>
 </resources>

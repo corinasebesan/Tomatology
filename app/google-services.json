@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "79846848405",
+    "project_id": "tomatology-222f9",
+    "storage_bucket": "tomatology-222f9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79846848405:android:d96f9b20f985687e01689c",
+        "android_client_info": {
+          "package_name": "com.example.tomatology"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "79846848405-lrb837nbba4n09f7nrib2atd3ec8luvu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDD3dWR52iwg1F1lNkeuFe6fQZyCV3K66s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "79846848405-lrb837nbba4n09f7nrib2atd3ec8luvu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
