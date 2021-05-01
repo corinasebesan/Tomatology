@@ -4,16 +4,15 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
 
@@ -115,19 +114,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        // val viewResult = findViewById<ImageView>(R.id.iv_logo)
         if(resultCode == Activity.RESULT_OK){
+            val intent = Intent(this, ResultActivity::class.java)
             if(requestCode == CAMERA_REQUEST_CODE){
-                val thumbnail: Bitmap = data!!.extras!!.get("data") as Bitmap
+                val thumbnail= data!!.extras!!.get("data") as Bitmap
+                intent.putExtra("picture", thumbnail)
                 // viewResult.setImageBitmap(thumbnail)
             }
             if(requestCode == STORAGE_REQUEST_CODE){
-                val uri:Uri ?= data?.data
-                val thumbnail: Bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, uri)
-                // viewResult.setImageBitmap(thumbnail)
+                    val uri: Uri= data?.data!!
+                    val source =
+                    ImageDecoder.createSource(this.contentResolver, uri)
+                    val thumbnail= ImageDecoder.decodeBitmap(source)
+                    intent.putExtra("picture", thumbnail)
             }
-
-            val intent = Intent(this, ResultActivity::class.java)
             startActivity(intent)
         }
     }

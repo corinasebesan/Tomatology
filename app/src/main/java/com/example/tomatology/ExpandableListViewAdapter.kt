@@ -46,7 +46,7 @@ class ExpandableListViewAdapter internal constructor(private val context: Contex
         }
 
         val titleTv = p2!!.findViewById<TextView>(R.id.tv_titles)
-        titleTv.setText(titleTile)
+        titleTv.text = titleTile
 
         return p2
     }
@@ -61,7 +61,7 @@ class ExpandableListViewAdapter internal constructor(private val context: Contex
         }
 
         val contentTv = p3!!.findViewById<TextView>(R.id.tv_contents)
-        contentTv.setText(contentTile)
+        contentTv.text = contentTile
 
         return p3
     }

@@ -1,33 +1,41 @@
 {
   "project_info": {
-    "project_number": "79846848405",
-    "project_id": "tomatology-222f9",
-    "storage_bucket": "tomatology-222f9.appspot.com"
+    "project_number": "260656782673",
+    "project_id": "tomatology-b6fb5",
+    "storage_bucket": "tomatology-b6fb5.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:79846848405:android:d96f9b20f985687e01689c",
+        "mobilesdk_app_id": "1:260656782673:android:e9bdb804b0075186b48770",
         "android_client_info": {
           "package_name": "com.example.tomatology"
         }
       },
       "oauth_client": [
         {
-          "client_id": "79846848405-lrb837nbba4n09f7nrib2atd3ec8luvu.apps.googleusercontent.com",
+          "client_id": "260656782673-3h6cpuf7vvlnlih5ci57f9o35stn2t6m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tomatology",
+            "certificate_hash": "809ce136ec91ee097e679bd77861e4953cc10df4"
+          }
+        },
+        {
+          "client_id": "260656782673-rml5pmh1a1l8qucun7vl8u28jvtil0pt.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDD3dWR52iwg1F1lNkeuFe6fQZyCV3K66s"
+          "current_key": "AIzaSyATnz7uUn6QaktkqmEKIqSMBXyP0ljhy2M"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "79846848405-lrb837nbba4n09f7nrib2atd3ec8luvu.apps.googleusercontent.com",
+              "client_id": "260656782673-rml5pmh1a1l8qucun7vl8u28jvtil0pt.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
