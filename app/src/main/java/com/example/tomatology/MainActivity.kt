@@ -4,15 +4,17 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
+import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.InputStream
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -119,16 +121,46 @@ class MainActivity : AppCompatActivity() {
             if(requestCode == CAMERA_REQUEST_CODE){
                 val thumbnail= data!!.extras!!.get("data") as Bitmap
                 intent.putExtra("picture", thumbnail)
+                startActivity(intent)
                 // viewResult.setImageBitmap(thumbnail)
             }
-            if(requestCode == STORAGE_REQUEST_CODE){
-                    val uri: Uri= data?.data!!
-                    val source =
-                    ImageDecoder.createSource(this.contentResolver, uri)
-                    val thumbnail= ImageDecoder.decodeBitmap(source)
-                    intent.putExtra("picture", thumbnail)
+            if(requestCode == STORAGE_REQUEST_CODE && data != null){
+//                    val uri= data?.data
+//                    val source =
+//                    ImageDecoder.createSource(this.contentResolver, uri!!)
+//                    val thumbnail= ImageDecoder.decodeBitmap(source)
+                val selectedPhotoUri = data.data
+                try {
+                    selectedPhotoUri?.let {
+//                            val source = ImageDecoder.createSource(this.contentResolver, selectedPhotoUri)
+//                            var thumbnail = ImageDecoder.decodeBitmap(source)
+//                            thumbnail = thumbnail.copy(Bitmap.Config.ARGB_8888, true)
+                            val thumbnail = getThumbnail(selectedPhotoUri)
+                            intent.putExtra("picture", thumbnail)
+                            startActivity(intent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
-            startActivity(intent)
         }
+    }
+
+    private fun getThumbnail(uri: Uri?): Bitmap? {
+        var input: InputStream? = this.contentResolver.openInputStream(uri!!)
+        val onlyBoundsOptions = BitmapFactory.Options()
+        onlyBoundsOptions.inJustDecodeBounds = true
+        onlyBoundsOptions.inPreferredConfig = Bitmap.Config.ARGB_8888 //optional
+        BitmapFactory.decodeStream(input, null, onlyBoundsOptions)
+        input?.close()
+        if (onlyBoundsOptions.outWidth == -1 || onlyBoundsOptions.outHeight == -1) {
+            return null
+        }
+        val bitmapOptions = BitmapFactory.Options()
+        bitmapOptions.inPreferredConfig = Bitmap.Config.ARGB_8888 //
+        input = this.contentResolver.openInputStream(uri)
+        val bitmap = BitmapFactory.decodeStream(input, null, bitmapOptions)
+        input?.close()
+        return bitmap
     }
 }
