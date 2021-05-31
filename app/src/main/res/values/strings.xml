@@ -11,10 +11,11 @@
     <string name="select">Select</string>
     <string name="cancel">Cancel</string>
     <string name="back">Back to menu</string>
-    <string name="guide_text">How to use the app</string>
-    <string name="guide_title">App Guide</string>
+    <string name="guide_text">Use app like this</string>
+    <string name="guide_title">How to use the app</string>
     <string name="disease_name">Disease Name</string>
     <string name="disease_description">This is the disease description.</string>
     <string name="archive_title">Title</string>
     <string name="archive_description">This is a description</string>
+    <string name="sign_out">Sign out</string>
 </resources>

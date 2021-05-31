@@ -2,6 +2,7 @@ package com.example.tomatology
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks.call
@@ -22,7 +23,18 @@ class TomatoDiseaseClassifier(private val context: Context) {
 
     private var inputImageWidth: Int = 0 // will be inferred from TF Lite model
     private var inputImageHeight: Int = 0 // will be inferred from TF Lite model
+    private var inputImageChannels: Int = 0 // will be inferred from TF Lite model
     private var modelInputSize: Int = 0 // will be inferred from TF Lite model
+    private val classes: Array<String> = arrayOf("Bacterial Spot",
+        "Early Blight",
+        "Healthy",
+        "Late Blight",
+        "Leaf Mold",
+        "Mosaic Virus",
+        "Septoria Leaf Spot",
+        "Target Spot",
+        "Two Spotted Spider Mite",
+        "Yellow Leaf Curl Virus")
 
     fun initialize(model: Any): Task<Void> {
         return call(
@@ -47,7 +59,8 @@ class TomatoDiseaseClassifier(private val context: Context) {
         val inputShape = interpreter.getInputTensor(0).shape()
         inputImageWidth = inputShape[1]
         inputImageHeight = inputShape[2]
-        modelInputSize = FLOAT_TYPE_SIZE * inputImageWidth * inputImageHeight * PIXEL_SIZE
+        inputImageChannels = inputShape[3]
+        modelInputSize = FLOAT_TYPE_SIZE * inputImageWidth * inputImageHeight * inputImageChannels * PIXEL_SIZE
 
         // Finish interpreter initialization
         this.interpreter = interpreter
@@ -55,7 +68,7 @@ class TomatoDiseaseClassifier(private val context: Context) {
         Log.d(TAG, "Initialized TFLite interpreter.")
     }
 
-    private fun classify(bitmap: Bitmap): String {
+    private fun classify(bitmap: Bitmap): ArrayList<Prediction> {
         if (!isInitialized) {
             throw IllegalStateException("TF Lite Interpreter is not initialized yet.")
         }
@@ -75,10 +88,10 @@ class TomatoDiseaseClassifier(private val context: Context) {
         elapsedTime = (System.nanoTime() - startTime) / 1000000
         Log.d(TAG, "Inference time = " + elapsedTime + "ms")
 
-        return getOutputString(result[0])
+        return getOutputList(result[0])
     }
 
-    fun classifyAsync(bitmap: Bitmap): Task<String> {
+    fun classifyAsync(bitmap: Bitmap): Task<ArrayList<Prediction>> {
         return call(executorService, { classify(bitmap) })
     }
 
@@ -97,29 +110,55 @@ class TomatoDiseaseClassifier(private val context: Context) {
         val byteBuffer = ByteBuffer.allocateDirect(modelInputSize)
         byteBuffer.order(ByteOrder.nativeOrder())
 
-        val pixels = IntArray(inputImageWidth * inputImageHeight)
-        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+//        val pixels = IntArray(inputImageWidth * inputImageHeight)
+//        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+//
+//        for (pixelValue in pixels) {
+//            val r = (pixelValue shr 16 and 0xFF)
+//            val g = (pixelValue shr 8 and 0xFF)
+//            val b = (pixelValue and 0xFF)
+//
+//            // Convert RGB to grayscale and normalize pixel value to [0..1]
+//            val normalizedPixelValue = (r + g + b) / 3.0f / 255.0f
+//            byteBuffer.putFloat(normalizedPixelValue)
+//        }
 
-        for (pixelValue in pixels) {
-            val r = (pixelValue shr 16 and 0xFF)
-            val g = (pixelValue shr 8 and 0xFF)
-            val b = (pixelValue and 0xFF)
+        for (y in 0 until inputImageWidth) {
+            for (x in 0 until inputImageHeight) {
+                val px = bitmap.getPixel(x, y)
 
-            // Convert RGB to grayscale and normalize pixel value to [0..1]
-            val normalizedPixelValue = (r + g + b) / 3.0f / 255.0f
-            byteBuffer.putFloat(normalizedPixelValue)
+                // Get channel values from the pixel value.
+                val r = Color.red(px)
+                val g = Color.green(px)
+                val b = Color.blue(px)
+
+                // Normalize channel values to [-1.0, 1.0]. This requirement depends on the model.
+                // For example, some models might require values to be normalized to the range
+                // [0.0, 1.0] instead.
+                val rf = (r - 127) / 255f
+                val gf = (g - 127) / 255f
+                val bf = (b - 127) / 255f
+
+                byteBuffer.putFloat(rf)
+                byteBuffer.putFloat(gf)
+                byteBuffer.putFloat(bf)
+            }
         }
 
         return byteBuffer
     }
 
-    private fun getOutputString(output: FloatArray): String {
-        val maxIndex = output.indices.maxByOrNull { output[it] } ?: -1
-        return "Prediction Result: %d\nConfidence: %2f".format(maxIndex, output[maxIndex])
+    private fun getOutputList(output: FloatArray): ArrayList<Prediction> {
+//        val maxIndex = output.indices.maxByOrNull { output[it] } ?: 0
+//
+//        return classes[maxIndex]+" - %.2f%%".format(output[maxIndex]*100)
+        val data: ArrayList<Prediction> = ArrayList<Prediction>()
+        output.indices.forEach { data.add(Prediction(classes[it],it,output[it])) }
+        return data
     }
 
     companion object {
-        private const val TAG = "DigitClassifier"
+        private const val TAG = "TomatoDiseaseClassifier"
 
         private const val FLOAT_TYPE_SIZE = 4
         private const val PIXEL_SIZE = 1

@@ -4,24 +4,20 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Parcelable
-import android.util.Log
+import android.util.Base64
 import android.widget.Button
 import android.widget.ExpandableListView
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
-import com.google.android.gms.tasks.Task
 import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditions
-import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
-import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
-import com.google.firebase.perf.FirebasePerformance
+import java.io.ByteArrayOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 class ResultActivity : AppCompatActivity() {
@@ -30,12 +26,15 @@ class ResultActivity : AppCompatActivity() {
     private lateinit var titleList : List<String>
     private lateinit var contentList: HashMap<String, List<String>>
 
+    private var database = Firebase.database
+    private var myRef = database.reference
+
 //    private val firebaseAnalytics = Firebase.analytics
     private var diseaseSelected = ""
-    private lateinit var remoteConfig: FirebaseRemoteConfig
-    private var firebasePerformance = FirebasePerformance.getInstance()
-    private var tomatoDiseaseClassifier = TomatoDiseaseClassifier(this)
+
     private var thumbnail:Bitmap? = null
+    private var prediction:ArrayList<Prediction> = ArrayList()
+    private var sortedList:ArrayList<Prediction> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,16 +43,15 @@ class ResultActivity : AppCompatActivity() {
         val bundle = intent.extras
         if(bundle != null){
             thumbnail = this.intent?.getParcelableExtra<Parcelable>("picture") as Bitmap
+            prediction = this.intent?.getParcelableArrayListExtra<Prediction>("prediction") as ArrayList<Prediction>
             viewResult.setImageBitmap(thumbnail)
         }
 
         val btnCancel = findViewById<Button>(R.id.btn_cancel)
         val btnSelect = findViewById<Button>(R.id.btn_select)
 
-        setupClassifier()
-
+        sortedList = prediction.sortedWith(compareBy { it.percentage }).reversed() as ArrayList<Prediction>
         showList()
-        classify()
         listViewAdapter = ExpandableListViewAdapter(this,titleList,contentList)
         val elvResults = findViewById<ExpandableListView>(R.id.elv_results)
         elvResults.setAdapter(listViewAdapter)
@@ -89,6 +87,23 @@ class ResultActivity : AppCompatActivity() {
             if(titleList.indexOf(diseaseSelected) == 0) {
                 Firebase.analytics.logEvent("correct_inference", null)
             }
+            val userID = FirebaseAuth.getInstance().currentUser!!.uid
+            val currentDateTime = LocalDateTime.now()
+            myRef.child("users")
+                .child(userID)
+                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child("diseaseID")
+                .setValue(sortedList[titleList.indexOf(diseaseSelected)].idLabel)
+            myRef.child("users")
+                .child(userID)
+                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child("disease")
+                .setValue(sortedList[titleList.indexOf(diseaseSelected)].label)
+            myRef.child("users")
+                .child(userID)
+                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child("diseasePicture")
+                .setValue(getImageData(thumbnail!!))
             val intent = Intent(this, DetailsActivity::class.java)
             startActivity(intent)
         }
@@ -103,123 +118,33 @@ class ResultActivity : AppCompatActivity() {
         titleList = ArrayList()
         contentList = HashMap()
 
-        (titleList as ArrayList<String>).add("Title 1")
-        (titleList as ArrayList<String>).add("Title 2")
-        (titleList as ArrayList<String>).add("Title 3")
+        (titleList as ArrayList<String>).add(sortedList[0].label+" - %.2f%%".format(sortedList[0].percentage*100))
+        (titleList as ArrayList<String>).add(sortedList[1].label+" - %.2f%%".format(sortedList[1].percentage*100))
+        (titleList as ArrayList<String>).add(sortedList[2].label+" - %.2f%%".format(sortedList[2].percentage*100))
 
-        val content1 : MutableList<String> = ArrayList()
-        content1.add("Content 1")
-        content1.add("Content 2")
-        content1.add("Content 3")
-
-        val content2 : MutableList<String> = ArrayList()
-        content2.add("Content 1")
-        content2.add("Content 2")
-        content2.add("Content 3")
-
-        val content3 : MutableList<String> = ArrayList()
-        content3.add("Content 1")
-        content3.add("Content 2")
-        content3.add("Content 3")
-
-        contentList[titleList[0]] = content1
-        contentList[titleList[1]] = content2
-        contentList[titleList[2]] = content3
-    }
-
-    private fun setupClassifier() {
-        configureRemoteConfig()
-        remoteConfig.fetchAndActivate()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val modelName = remoteConfig.getString("model_name")
-                    val downloadTrace = firebasePerformance.newTrace("download_model")
-                    downloadTrace.start()
-                    downloadModel(modelName)
-                        .addOnSuccessListener {
-                            downloadTrace.stop()
-                        }
-                } else {
-                    showToast("Failed to fetch model name.")
-                }
-            }
-    }
-
-    private fun configureRemoteConfig() {
-        remoteConfig = Firebase.remoteConfig
-        val configSettings = remoteConfigSettings {
-            minimumFetchIntervalInSeconds = 3600
+        if(sortedList[0].label!="Healthy"){
+            val content1 : MutableList<String> = ArrayList()
+            content1.add("Content 1")
+            contentList[titleList[0]] = content1
         }
-        remoteConfig.setConfigSettingsAsync(configSettings)
-    }
-
-    private fun downloadModel(modelName: String): Task<Void> {
-        val remoteModel = FirebaseCustomRemoteModel.Builder(modelName).build()
-        val firebaseModelManager = FirebaseModelManager.getInstance()
-        return firebaseModelManager
-            .isModelDownloaded(remoteModel)
-            .continueWithTask { task ->
-                // Create update condition if model is already downloaded, otherwise create download
-                // condition.
-                val conditions = if (task.result != null && task.result == true) {
-                    FirebaseModelDownloadConditions.Builder()
-                        .requireWifi()
-                        .build() // Update condition that requires wifi.
-                } else {
-                    FirebaseModelDownloadConditions.Builder().build() // Download condition.
-                }
-                firebaseModelManager.download(remoteModel, conditions)
-            }
-            .addOnSuccessListener {
-                firebaseModelManager.getLatestModelFile(remoteModel)
-                    .addOnCompleteListener {
-                        val model = it.result
-                        if (model == null) {
-                            showToast("Failed to get model file.")
-                        } else {
-                            showToast("Downloaded remote model: $modelName")
-                            tomatoDiseaseClassifier.initialize(model)
-                        }
-                    }
-            }
-            .addOnFailureListener {
-                showToast("Model download failed for $modelName, please check your connection.")
-            }
-    }
-
-    override fun onDestroy() {
-        tomatoDiseaseClassifier.close()
-        super.onDestroy()
-    }
-
-    private fun classify() {
-        val bitmap = thumbnail
-
-        if ((bitmap != null) && (tomatoDiseaseClassifier.isInitialized)) {
-            val classifyTrace = firebasePerformance.newTrace("classify")
-            classifyTrace.start()
-
-            tomatoDiseaseClassifier
-                .classifyAsync(bitmap)
-                .addOnSuccessListener { resultText ->
-                    classifyTrace.stop()
-                    (titleList as ArrayList<String>)[0] = resultText
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Error classifying drawing.", e)
-                }
+        if(sortedList[1].label!="Healthy"){
+            val content2 : MutableList<String> = ArrayList()
+            content2.add("Content 1")
+            contentList[titleList[1]] = content2
+        }
+        if(sortedList[2].label!="Healthy"){
+            val content3 : MutableList<String> = ArrayList()
+            content3.add("Content 1")
+            contentList[titleList[2]] = content3
         }
     }
 
-    private fun showToast(text: String) {
-        Toast.makeText(
-            this,
-            text,
-            Toast.LENGTH_LONG
-        ).show()
-    }
+    private fun getImageData(bmp: Bitmap): String {
+        val bao = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao) // bmp is bitmap from user image file
 
-    companion object {
-        private const val TAG = "MainActivity"
+        bmp.recycle()
+        val byteArray: ByteArray = bao.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.URL_SAFE)
     }
 }
