@@ -22,6 +22,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ml.modeldownloader.CustomModel
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions
@@ -32,6 +33,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
 import java.io.InputStream
+import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
@@ -47,6 +49,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
+
+    private var database = Firebase.database
+    private var informationList:ArrayList<Information> = ArrayList()
+    private var guideString:String = ""
+
 
     private lateinit var remoteConfig: FirebaseRemoteConfig
     private var firebasePerformance = FirebasePerformance.getInstance()
@@ -71,6 +78,31 @@ class MainActivity : AppCompatActivity() {
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
         auth = Firebase.auth
+
+        database.getReference("guide").get().addOnSuccessListener {
+            if(it.exists()){
+                guideString = it.value.toString()
+            }
+        }.addOnFailureListener {
+            Log.w("loadPost:onCancelled", it.message.toString())
+        }
+
+        database.getReference("information").get().addOnSuccessListener {
+            if(it.exists()){
+                it.children.forEach { i ->
+                    informationList.add(Information(
+                    i.child("causes").value.toString(),
+                    i.child("diseaseName").value.toString(),
+                    i.child("prevention").value.toString(),
+                    i.child("symptoms").value.toString(),
+                    i.child("symptomsSummary").value.toString(),
+                    i.child("treatment").value.toString()))
+                }
+
+            }
+        }.addOnFailureListener {
+            Log.w("loadPost:onCancelled", it.message.toString())
+        }
 
         btnCamera.setOnClickListener {
             if(ContextCompat.checkSelfPermission(
@@ -109,11 +141,13 @@ class MainActivity : AppCompatActivity() {
 
         btnArchive.setOnClickListener {
             val intent = Intent(this, ArchiveActivity::class.java)
+            intent.putExtra("information", informationList)
             startActivity(intent)
         }
 
         btnGuide.setOnClickListener {
             val intent = Intent(this, GuideActivity::class.java)
+            intent.putExtra("text", guideString)
             startActivity(intent)
         }
 
@@ -217,13 +251,16 @@ class MainActivity : AppCompatActivity() {
                 Log.w(TAG, "Google sign in failed", e)
             }
         }
-        if(resultCode == Activity.RESULT_OK){
+        if(resultCode == Activity.RESULT_OK && data != null){
             if(requestCode == CAMERA_REQUEST_CODE){
-                val thumbnail= data!!.extras!!.get("data") as Bitmap
+                // val uri = data.data!!
+                val thumbnail= data.extras!!.get("data") as Bitmap
                 classify(thumbnail)
+                //uploadPicture(uri, thumbnail)
+                //classify(thumbnail)
                 // viewResult.setImageBitmap(thumbnail)
             }
-            if(requestCode == STORAGE_REQUEST_CODE && data != null){
+            if(requestCode == STORAGE_REQUEST_CODE){
 //                    val uri= data?.data
 //                    val source =
 //                    ImageDecoder.createSource(this.contentResolver, uri!!)
@@ -236,6 +273,8 @@ class MainActivity : AppCompatActivity() {
 //                            thumbnail = thumbnail.copy(Bitmap.Config.ARGB_8888, true)
                             val thumbnail = getThumbnail(selectedPhotoUri)
                             classify(thumbnail!!)
+                            //uploadPicture(selectedPhotoUri, thumbnail!!)
+                            //classify(thumbnail!!)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -243,6 +282,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+//    private fun uploadPicture(imageUri: Uri, thumbnail: Bitmap){
+//        val randomKey: String = UUID.randomUUID().toString()
+//        val tomatoRef = storageRef.child("images/$randomKey")
+//
+//        tomatoRef.putFile(imageUri)
+//            .addOnSuccessListener {   // Get a URL to the uploaded content
+//                showToast("Success to upload")
+//                classify(thumbnail,randomKey)
+//            }
+//            .addOnFailureListener {
+//                showToast("Failed to upload")
+//            }
+//    }
 
     private fun getThumbnail(uri: Uri?): Bitmap? {
         var input: InputStream? = this.contentResolver.openInputStream(uri!!)
@@ -289,34 +342,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadModel(modelName: String): Task<CustomModel> {
-//        val remoteModel = FirebaseCustomRemoteModel.Builder(modelName).build()
-//        val firebaseModelManager = FirebaseModelManager.getInstance()
-//        return firebaseModelManager
-//            .isModelDownloaded(remoteModel)
-//            .continueWithTask { task ->
-//                // Create update condition if model is already downloaded, otherwise create download
-//                // condition.
-//                val conditions = if (task.result != null && task.result == true) {
-//                    FirebaseModelDownloadConditions.Builder()
-//                        .requireWifi()
-//                        .build() // Update condition that requires wifi.
-//                } else {
-//                    FirebaseModelDownloadConditions.Builder().build() // Download condition.
-//                }
-//                firebaseModelManager.download(remoteModel, conditions)
-//            }
-//            .addOnSuccessListener {
-//                firebaseModelManager.getLatestModelFile(remoteModel)
-//                    .addOnCompleteListener {
-//                        val model = it.result
-//                        if (model == null) {
-//                            showToast("Failed to get model file.")
-//                        } else {
-//                            showToast("Downloaded remote model: $modelName")
-//                            tomatoDiseaseClassifier.initialize(model)
-//                        }
-//                    }
-//            }
         val conditions = CustomModelDownloadConditions.Builder()
             .requireWifi()  // Also possible: .requireCharging() and .requireDeviceIdle()
             .build()
@@ -367,7 +392,9 @@ class MainActivity : AppCompatActivity() {
                     classifyTrace.stop()
                     val intent = Intent(this, ResultActivity::class.java)
                     intent.putExtra("picture", thumbnail)
+                    // intent.putExtra("name", pictureName)
                     intent.putExtra("prediction", resultText)
+                    intent.putExtra("information", informationList)
                     startActivity(intent)
                 }
                 .addOnFailureListener { e ->

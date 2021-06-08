@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "260656782673",
+    "firebase_url": "https://tomatology-b6fb5-default-rtdb.firebaseio.com",
     "project_id": "tomatology-b6fb5",
     "storage_bucket": "tomatology-b6fb5.appspot.com"
   },
@@ -19,6 +20,14 @@
           "android_info": {
             "package_name": "com.example.tomatology",
             "certificate_hash": "809ce136ec91ee097e679bd77861e4953cc10df4"
+          }
+        },
+        {
+          "client_id": "260656782673-6l7id1dhlrc9hfeb7rl912stgv3ilks2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tomatology",
+            "certificate_hash": "6dda6b3e1b1375053a4b12a237653d37a7acb216"
           }
         },
         {

@@ -15,6 +15,7 @@ import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -31,9 +32,11 @@ class ResultActivity : AppCompatActivity() {
 
 //    private val firebaseAnalytics = Firebase.analytics
     private var diseaseSelected = ""
+    // private var name = ""
 
     private var thumbnail:Bitmap? = null
     private var prediction:ArrayList<Prediction> = ArrayList()
+    private var information:ArrayList<Information> = ArrayList()
     private var sortedList:ArrayList<Prediction> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +47,8 @@ class ResultActivity : AppCompatActivity() {
         if(bundle != null){
             thumbnail = this.intent?.getParcelableExtra<Parcelable>("picture") as Bitmap
             prediction = this.intent?.getParcelableArrayListExtra<Prediction>("prediction") as ArrayList<Prediction>
+            information = this.intent?.getParcelableArrayListExtra<Information>("information") as ArrayList<Information>
+            // name = this.intent?.getStringExtra("name") as String
             viewResult.setImageBitmap(thumbnail)
         }
 
@@ -51,6 +56,7 @@ class ResultActivity : AppCompatActivity() {
         val btnSelect = findViewById<Button>(R.id.btn_select)
 
         sortedList = prediction.sortedWith(compareBy { it.percentage }).reversed() as ArrayList<Prediction>
+        information.add(2, Information("","Healthy","","","",""))
         showList()
         listViewAdapter = ExpandableListViewAdapter(this,titleList,contentList)
         val elvResults = findViewById<ExpandableListView>(R.id.elv_results)
@@ -89,22 +95,31 @@ class ResultActivity : AppCompatActivity() {
             }
             val userID = FirebaseAuth.getInstance().currentUser!!.uid
             val currentDateTime = LocalDateTime.now()
+            val resultID = currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
             myRef.child("users")
                 .child(userID)
-                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child(resultID)
                 .child("diseaseID")
                 .setValue(sortedList[titleList.indexOf(diseaseSelected)].idLabel)
             myRef.child("users")
                 .child(userID)
-                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child(resultID)
                 .child("disease")
                 .setValue(sortedList[titleList.indexOf(diseaseSelected)].label)
             myRef.child("users")
                 .child(userID)
-                .child(currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
+                .child(resultID)
                 .child("diseasePicture")
                 .setValue(getImageData(thumbnail!!))
+            myRef.child("users")
+                .child(userID)
+                .child(resultID)
+                .child("date")
+                .setValue(currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
             val intent = Intent(this, DetailsActivity::class.java)
+            //intent.putExtra("picture", getImageData(thumbnail!!))
+            intent.putExtra("information", information[sortedList[titleList.indexOf(diseaseSelected)].idLabel])
+            //intent.putExtra("name", name)
             startActivity(intent)
         }
 
@@ -122,21 +137,29 @@ class ResultActivity : AppCompatActivity() {
         (titleList as ArrayList<String>).add(sortedList[1].label+" - %.2f%%".format(sortedList[1].percentage*100))
         (titleList as ArrayList<String>).add(sortedList[2].label+" - %.2f%%".format(sortedList[2].percentage*100))
 
-        if(sortedList[0].label!="Healthy"){
+
+        if(sortedList[0].label!="Healthy")
+        {
             val content1 : MutableList<String> = ArrayList()
-            content1.add("Content 1")
+            content1.add(information[sortedList[0].idLabel].symptomsSummary)
             contentList[titleList[0]] = content1
+
         }
-        if(sortedList[1].label!="Healthy"){
+
+        if(sortedList[1].label!="Healthy")
+        {
             val content2 : MutableList<String> = ArrayList()
-            content2.add("Content 1")
+            content2.add(information[sortedList[1].idLabel].symptomsSummary)
             contentList[titleList[1]] = content2
         }
-        if(sortedList[2].label!="Healthy"){
+
+        if(sortedList[2].label!="Healthy")
+        {
             val content3 : MutableList<String> = ArrayList()
-            content3.add("Content 1")
+            content3.add(information[sortedList[2].idLabel].symptomsSummary)
             contentList[titleList[2]] = content3
         }
+
     }
 
     private fun getImageData(bmp: Bitmap): String {

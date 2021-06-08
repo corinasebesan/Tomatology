@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks.call
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import org.tensorflow.lite.Interpreter
 import java.io.File
 import java.nio.ByteBuffer
@@ -152,8 +154,9 @@ class TomatoDiseaseClassifier(private val context: Context) {
 //        val maxIndex = output.indices.maxByOrNull { output[it] } ?: 0
 //
 //        return classes[maxIndex]+" - %.2f%%".format(output[maxIndex]*100)
-        val data: ArrayList<Prediction> = ArrayList<Prediction>()
+        val data: ArrayList<Prediction> = ArrayList()
         output.indices.forEach { data.add(Prediction(classes[it],it,output[it])) }
+
         return data
     }
 
