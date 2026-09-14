@@ -112,21 +112,8 @@ class TomatoDiseaseClassifier(private val context: Context) {
         val byteBuffer = ByteBuffer.allocateDirect(modelInputSize)
         byteBuffer.order(ByteOrder.nativeOrder())
 
-//        val pixels = IntArray(inputImageWidth * inputImageHeight)
-//        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-//
-//        for (pixelValue in pixels) {
-//            val r = (pixelValue shr 16 and 0xFF)
-//            val g = (pixelValue shr 8 and 0xFF)
-//            val b = (pixelValue and 0xFF)
-//
-//            // Convert RGB to grayscale and normalize pixel value to [0..1]
-//            val normalizedPixelValue = (r + g + b) / 3.0f / 255.0f
-//            byteBuffer.putFloat(normalizedPixelValue)
-//        }
-
-        for (y in 0 until inputImageWidth) {
-            for (x in 0 until inputImageHeight) {
+        for (y in 0 until inputImageHeight) {
+            for (x in 0 until inputImageWidth) {
                 val px = bitmap.getPixel(x, y)
 
                 // Get channel values from the pixel value.
@@ -151,9 +138,6 @@ class TomatoDiseaseClassifier(private val context: Context) {
     }
 
     private fun getOutputList(output: FloatArray): ArrayList<Prediction> {
-//        val maxIndex = output.indices.maxByOrNull { output[it] } ?: 0
-//
-//        return classes[maxIndex]+" - %.2f%%".format(output[maxIndex]*100)
         val data: ArrayList<Prediction> = ArrayList()
         output.indices.forEach { data.add(Prediction(classes[it],it,output[it])) }
 

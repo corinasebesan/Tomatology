@@ -8,23 +8,17 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class RecyclerAdapter (private var titles: List<String>, private var date: List<String>, private var information: Information):
-    RecyclerView.Adapter<RecyclerAdapter.ViewHolder>(){
-      inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-            val itemTitle: TextView = itemView.findViewById(R.id.tv_item_title)
-            val itemDetail: TextView = itemView.findViewById(R.id.tv_item_description)
+class RecyclerAdapter(
+    private var titles: List<String>,
+    private var date: List<String>,
+    private var ids: List<Long>,
+    private var informationList: List<Information>
+) : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>() {
 
-          init{
-              itemView.setOnClickListener { v: View ->
-                  // val position: Int = adapterPosition
-                  val context: Context = v.context
-                  val intent = Intent(context, DetailsActivity::class.java)
-                  intent.putExtra("information", information)
-                  // intent.putExtra("name", imageName[position])
-                  context.startActivity(intent)
-              }
-          }
-      }
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val itemTitle: TextView = itemView.findViewById(R.id.tv_item_title)
+        val itemDetail: TextView = itemView.findViewById(R.id.tv_item_description)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_layout,parent,false)
@@ -34,6 +28,13 @@ class RecyclerAdapter (private var titles: List<String>, private var date: List<
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.itemTitle.text = titles[position]
         holder.itemDetail.text = date[position]
+
+        holder.itemView.setOnClickListener { v: View ->
+            val context: Context = v.context
+            val intent = Intent(context, DetailsActivity::class.java)
+            intent.putExtra("information", informationList[ids[position].toInt()])
+            context.startActivity(intent)
+        }
     }
 
     override fun getItemCount(): Int {

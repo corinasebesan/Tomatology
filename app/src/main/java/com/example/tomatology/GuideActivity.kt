@@ -1,10 +1,7 @@
 package com.example.tomatology
 
-import android.content.Intent
-import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Parcelable
 import android.widget.Button
 import android.widget.TextView
 
@@ -22,8 +19,7 @@ class GuideActivity : AppCompatActivity() {
         }
 
         btnMenu.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            goToMain()
         }
     }
 }

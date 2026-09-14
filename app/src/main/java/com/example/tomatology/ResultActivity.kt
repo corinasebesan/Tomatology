@@ -15,7 +15,6 @@ import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -30,9 +29,7 @@ class ResultActivity : AppCompatActivity() {
     private var database = Firebase.database
     private var myRef = database.reference
 
-//    private val firebaseAnalytics = Firebase.analytics
     private var diseaseSelected = ""
-    // private var name = ""
 
     private var thumbnail:Bitmap? = null
     private var prediction:ArrayList<Prediction> = ArrayList()
@@ -48,7 +45,6 @@ class ResultActivity : AppCompatActivity() {
             thumbnail = this.intent?.getParcelableExtra<Parcelable>("picture") as Bitmap
             prediction = this.intent?.getParcelableArrayListExtra<Prediction>("prediction") as ArrayList<Prediction>
             information = this.intent?.getParcelableArrayListExtra<Information>("information") as ArrayList<Information>
-            // name = this.intent?.getStringExtra("name") as String
             viewResult.setImageBitmap(thumbnail)
         }
 
@@ -89,43 +85,30 @@ class ResultActivity : AppCompatActivity() {
         }
 
         btnSelect.setOnClickListener {
-            //logAnalyticsEvent(diseaseSelected)
             if(titleList.indexOf(diseaseSelected) == 0) {
                 Firebase.analytics.logEvent("correct_inference", null)
             }
             val userID = FirebaseAuth.getInstance().currentUser!!.uid
             val currentDateTime = LocalDateTime.now()
             val resultID = currentDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+            val selectedPrediction = sortedList[titleList.indexOf(diseaseSelected)]
+            val resultData = mapOf(
+                "diseaseID" to selectedPrediction.idLabel,
+                "disease" to selectedPrediction.label,
+                "diseasePicture" to getImageData(thumbnail!!),
+                "date" to currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            )
             myRef.child("users")
                 .child(userID)
                 .child(resultID)
-                .child("diseaseID")
-                .setValue(sortedList[titleList.indexOf(diseaseSelected)].idLabel)
-            myRef.child("users")
-                .child(userID)
-                .child(resultID)
-                .child("disease")
-                .setValue(sortedList[titleList.indexOf(diseaseSelected)].label)
-            myRef.child("users")
-                .child(userID)
-                .child(resultID)
-                .child("diseasePicture")
-                .setValue(getImageData(thumbnail!!))
-            myRef.child("users")
-                .child(userID)
-                .child(resultID)
-                .child("date")
-                .setValue(currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .updateChildren(resultData)
             val intent = Intent(this, DetailsActivity::class.java)
-            //intent.putExtra("picture", getImageData(thumbnail!!))
-            intent.putExtra("information", information[sortedList[titleList.indexOf(diseaseSelected)].idLabel])
-            //intent.putExtra("name", name)
+            intent.putExtra("information", information[selectedPrediction.idLabel])
             startActivity(intent)
         }
 
         btnCancel.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            goToMain()
         }
     }
 

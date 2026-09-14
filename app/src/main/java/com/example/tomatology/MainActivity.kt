@@ -171,7 +171,6 @@ class MainActivity : AppCompatActivity() {
         else{
             showToast("Welcome "+currentUser.displayName)
         }
-        // updateUI(currentUser)
     }
 
     private fun firebaseAuthWithGoogle(idToken: String) {
@@ -183,11 +182,9 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG, "signInWithCredential:success")
                     val user = auth.currentUser
                     showToast("Welcome "+user!!.displayName)
-                    // updateUI(user)
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
-                    // updateUI(null)
                 }
             }
     }
@@ -196,12 +193,6 @@ class MainActivity : AppCompatActivity() {
         val signInIntent = googleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
     }
-
-//    private fun updateUI(user: FirebaseUser?) {
-//        if(user != null){
-//            val uid = user.uid
-//        }
-//    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -253,28 +244,15 @@ class MainActivity : AppCompatActivity() {
         }
         if(resultCode == Activity.RESULT_OK && data != null){
             if(requestCode == CAMERA_REQUEST_CODE){
-                // val uri = data.data!!
                 val thumbnail= data.extras!!.get("data") as Bitmap
                 classify(thumbnail)
-                //uploadPicture(uri, thumbnail)
-                //classify(thumbnail)
-                // viewResult.setImageBitmap(thumbnail)
             }
             if(requestCode == STORAGE_REQUEST_CODE){
-//                    val uri= data?.data
-//                    val source =
-//                    ImageDecoder.createSource(this.contentResolver, uri!!)
-//                    val thumbnail= ImageDecoder.decodeBitmap(source)
                 val selectedPhotoUri = data.data
                 try {
                     selectedPhotoUri?.let {
-//                            val source = ImageDecoder.createSource(this.contentResolver, selectedPhotoUri)
-//                            var thumbnail = ImageDecoder.decodeBitmap(source)
-//                            thumbnail = thumbnail.copy(Bitmap.Config.ARGB_8888, true)
-                            val thumbnail = getThumbnail(selectedPhotoUri)
-                            classify(thumbnail!!)
-                            //uploadPicture(selectedPhotoUri, thumbnail!!)
-                            //classify(thumbnail!!)
+                        val thumbnail = getThumbnail(selectedPhotoUri)
+                        classify(thumbnail!!)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -282,20 +260,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-//    private fun uploadPicture(imageUri: Uri, thumbnail: Bitmap){
-//        val randomKey: String = UUID.randomUUID().toString()
-//        val tomatoRef = storageRef.child("images/$randomKey")
-//
-//        tomatoRef.putFile(imageUri)
-//            .addOnSuccessListener {   // Get a URL to the uploaded content
-//                showToast("Success to upload")
-//                classify(thumbnail,randomKey)
-//            }
-//            .addOnFailureListener {
-//                showToast("Failed to upload")
-//            }
-//    }
 
     private fun getThumbnail(uri: Uri?): Bitmap? {
         var input: InputStream? = this.contentResolver.openInputStream(uri!!)
@@ -392,7 +356,6 @@ class MainActivity : AppCompatActivity() {
                     classifyTrace.stop()
                     val intent = Intent(this, ResultActivity::class.java)
                     intent.putExtra("picture", thumbnail)
-                    // intent.putExtra("name", pictureName)
                     intent.putExtra("prediction", resultText)
                     intent.putExtra("information", informationList)
                     startActivity(intent)

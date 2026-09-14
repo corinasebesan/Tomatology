@@ -2,6 +2,7 @@ package com.example.tomatology
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -9,12 +10,15 @@ import com.google.firebase.database.*
 
 class ArchiveActivity : AppCompatActivity() {
 
+    companion object {
+        private const val TAG = "ArchiveActivity"
+    }
+
     private lateinit var dref : DatabaseReference
     private var titlesList = mutableListOf<String>()
     private var dateList = mutableListOf<String>()
     private var idList = mutableListOf<Long>()
     private var information:ArrayList<Information> = ArrayList()
-    // private var imageList = mutableListOf<String>()
     private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,18 +49,17 @@ class ArchiveActivity : AppCompatActivity() {
                         val title = userSnapshot.child("disease").value as String
                         val date = userSnapshot.child("date").value as String
                         val id = userSnapshot.child("diseaseID").value as Long
-                        // val imageName = userSnapshot.child("diseasePicture").value as String
 
                         addToList(title, date, id)
 
                     }
 
-                    recyclerView.adapter = RecyclerAdapter(titlesList, dateList, information[6])
+                    recyclerView.adapter = RecyclerAdapter(titlesList, dateList, idList, information)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
+                Log.w(TAG, "loadArchive:onCancelled", error.toException())
             }
 
         })
@@ -65,6 +68,5 @@ class ArchiveActivity : AppCompatActivity() {
         titlesList.add(title)
         dateList.add(date)
         idList.add(id)
-        // imageList.add(imageName)
     }
 }
